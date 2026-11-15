@@ -1,0 +1,31 @@
+@page "/survive"
+@implements IAsyncDisposable
+@inject IJSRuntime JS
+
+<PageTitle>Sol Survival · Mars Survival Handbook</PageTitle>
+<div class="page"><div class="wrap wide">
+    <div class="crumbs mono">PIXEL EXPEDITION · KEYBOARD WASD / ARROWS</div>
+    <div id="sol-game"></div>
+    <p class="note mono">Educational game with simplified numbers, not an operational procedure. Not endorsed by NASA.</p>
+</div></div>
+
+@code {
+    IJSObjectReference? _game;
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (!firstRender) return;
+        try
+        {
+            _game = await JS.InvokeAsync<IJSObjectReference>("import", "./js/game.js");
+            await _game.InvokeVoidAsync("init", "#sol-game");
+        }
+        catch (Exception ex) { Console.WriteLine("Game failed to start: " + ex.Message); }
+    }
+
+    public async ValueTask DisposeAsync()
+    {
+        if (_game is null) return;
+        try { await _game.InvokeVoidAsync("destroy"); await _game.DisposeAsync(); } catch { }
+    }
+}
