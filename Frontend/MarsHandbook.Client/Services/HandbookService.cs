@@ -19,6 +19,32 @@ public sealed class HandbookService
         ("human-survival", "Human Survival"),
     };
 
+    // The backend seeds some names in Vietnamese even for language=en; show English on the English site.
+    static readonly Dictionary<string, string> CatEn = new()
+    {
+        ["exploration-history"] = "History of Mars exploration", ["structure-and-terrain"] = "Structure and terrain",
+        ["atmosphere-temperature-gravity"] = "Atmosphere, temperature, gravity", ["water-and-life"] = "Water and signs of life",
+        ["missions-and-rovers"] = "NASA missions and rovers",
+        ["oxygen-and-low-pressure"] = "Oxygen and low pressure", ["extreme-temperatures"] = "Extreme temperatures",
+        ["space-radiation"] = "Space radiation", ["dust-storms"] = "Dust storms", ["partial-gravity"] = "Partial gravity",
+        ["housing"] = "Habitats and housing", ["water-and-oxygen"] = "Water and oxygen", ["food"] = "Food production",
+        ["energy"] = "Energy", ["sanitation-and-waste"] = "Sanitation and waste", ["community"] = "Community life",
+        ["physical-health"] = "Physical health", ["mental-health"] = "Mental health", ["nutrition"] = "Nutrition",
+        ["medical-care"] = "Medical care", ["teamwork"] = "Teamwork", ["adapting-to-isolation"] = "Adapting to isolation",
+    };
+    static readonly Dictionary<string, string> ModEn = new()
+    {
+        ["discover-mars"] = "Explore Mars through verified NASA science: history, terrain, atmosphere, water and missions.",
+        ["survival-knowledge"] = "The hazards a human body faces on Mars: thin air, cold, radiation, dust and low gravity.",
+        ["living-on-mars"] = "How a crew could live on Mars: habitats, water and oxygen, food, energy, waste and community.",
+        ["science-technology"] = "The technologies that make survival possible, from ISRU to water recycling and radiation shielding.",
+        ["human-survival"] = "Body, mind and teamwork far from Earth: health, nutrition, medical care and isolation.",
+    };
+    static bool IsVi(string? s) => !string.IsNullOrEmpty(s) && System.Text.RegularExpressions.Regex.IsMatch(s, "[ăâđêôơưĂÂĐÊÔƠƯạ-ỹẠ-Ỹ]");
+    static string Humanize(string slug) => slug.Length == 0 ? slug : char.ToUpperInvariant(slug[0]) + slug[1..].Replace('-', ' ');
+    static string CatName(string slug, string name) => !IsVi(name) && name.Length > 0 ? name : CatEn.TryGetValue(slug, out var en) ? en : Humanize(slug);
+    static string ModDesc(string slug, string desc) => !IsVi(desc) && desc.Length > 0 ? desc : ModEn.TryGetValue(slug, out var en) ? en : "";
+
     readonly MarsApi _api; readonly IJSRuntime _js;
     List<Mod>? _mods; List<Art>? _arts;
     public HandbookService(MarsApi api, IJSRuntime js) { _api = api; _js = js; }
@@ -35,9 +61,9 @@ public sealed class HandbookService
         {
             var j = res[i];
             var cats = j.A("categories").Select(c => new Cat(
-                c.S("slug") ?? "", c.S("name") ?? "", c.S("description") ?? "",
+                c.S("slug") ?? "", CatName(c.S("slug") ?? "", c.S("name") ?? ""), IsVi(c.S("description")) ? "" : c.S("description") ?? "",
                 c.I("publishedArticleCount"), c.S("imageUrl"), c.S("imageCredit"))).ToList();
-            list.Add(new Mod(Order[i].Slug, j.S("name") ?? Order[i].Label, j.S("description") ?? "", j.I("publishedArticleCount"), cats));
+            list.Add(new Mod(Order[i].Slug, IsVi(j.S("name")) ? Order[i].Label : j.S("name") ?? Order[i].Label, ModDesc(Order[i].Slug, j.S("description") ?? ""), j.I("publishedArticleCount"), cats));
         }
         return _mods = list;
     }

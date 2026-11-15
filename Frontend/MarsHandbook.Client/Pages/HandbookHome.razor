@@ -38,7 +38,7 @@
                 <div class="topics">
                     @foreach (var c in m.Cats)
                     {
-                        <a class="topic" href="@($"handbook/{m.Slug}?c={c.Slug}")">@c.Name<small>@c.Count</small></a>
+                        <a class="topic @(c.Count == 0 ? "empty" : "")" href="@($"handbook/{m.Slug}?c={c.Slug}")" title="@(c.Count == 0 ? "No reviewed article yet" : "")">@c.Name<small>@c.Count</small></a>
                     }
                 </div>
             </section>
